@@ -28,7 +28,11 @@ impl<'a> Counter<'a> {
 
   fn hours_between(prev: &Commit, next: &Commit) -> f32 {
     let minutes = prev.date.signed_duration_since(next.date).num_minutes() as f32;
-    minutes / 60f32
+    if minutes <= 0f32 {
+      0f32
+    } else {
+      minutes / 60f32
+    }
   }
 
 }

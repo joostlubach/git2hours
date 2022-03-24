@@ -2,9 +2,6 @@ extern crate chrono;
 extern crate regex;
 
 use std::{io::{BufReader, BufRead, Lines}, process::{ChildStdout}};
-use chrono::{DateTime};
-use lazy_static::lazy_static;
-use regex::Regex;
 
 use super::{CommitQuery, commit_query::{Commit, ParseLineResult}};
 
@@ -88,7 +85,7 @@ impl<'a> CommitIterator<'a> {
     loop {
       match self.read_next_line() {
         Some(line) => {
-          match self.parse_line(&line) {
+          match self.query.parse_line(&line) {
             ParseLineResult::Unknown => { continue },
             other => return other
           }
@@ -99,42 +96,6 @@ impl<'a> CommitIterator<'a> {
       }
     }
   }
-
-  fn parse_line(&self, line: &str) -> ParseLineResult {
-    // A commit consists of one or two lines. The first line is a summary, which is formatted as:
-    // COMMIT\t<HASH>\t<DATE>\t<AUTHOR>
-    //
-    // The second line is a line containing insertions and deletions, and looks like:
-    //  <N> files changed, <N> insertions(+), <N> deletions(-)
-    
-    // First split everything into parts separated by tabs. That way, we can quickly check for the
-    // COMMIT marker to identify the summary line.
-    let parts: Vec<&str> = line.split('\t').collect();
-
-    if parts[0] == "COMMIT" {
-      match DateTime::parse_from_rfc3339(parts[2]) {
-        Ok(date) => ParseLineResult::NewCommit(Commit {
-          hash: String::from(parts[1]),
-          author: String::from(parts[3]),
-          date: date,
-          insertion_count: 0,
-          deletion_count: 0
-        }),
-        _ => ParseLineResult::Unknown
-      }
-    } else {
-      match MODIFICATIONS_REGEX.captures(parts[0]) {
-        Some(caps) => {
-          let insertions: u32 = caps[1].parse().unwrap();
-          let deletions: u32 = caps[2].parse().unwrap();
-
-          ParseLineResult::Modifications(insertions, deletions)
-        }
-        None => ParseLineResult::Unknown
-      }
-    }
-  }
-
 
 }
 
@@ -158,16 +119,6 @@ impl<'a> Iterator for CommitIterator<'a> {
     }
   }
 
-}
-
-// endregion
-
-// region Support
-
-lazy_static! {
-  static ref MODIFICATIONS_REGEX: Regex = Regex::new(
-    r"(\d+) insertions\(\+\).*?(\d+) deletions\(\-\)"
-  ).unwrap();
 }
 
 // endregion
