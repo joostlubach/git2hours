@@ -56,7 +56,7 @@ impl CommitQuery {
 
   fn build_command(&self) -> Command {
     let mut command = Command::new("git");
-    command.args(["log", "--pretty=format:COMMIT\t%h\t%ad\t%an"]);
+    command.args(["log", "--pretty=format:COMMIT\t%h\t%cd\t%an"]);
     command.args(["--abbrev-commit", "--date=iso-strict", "--shortstat"]);
 
     if let Some(limit) = self.limit {
